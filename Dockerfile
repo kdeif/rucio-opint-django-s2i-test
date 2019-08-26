@@ -48,9 +48,6 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 # Copy crontab
 COPY ./s2i/etc/ ${APP_ROOT}/etc/
 
-# Copy extra files to the image.
-COPY ./root/ /
-
 # - Create a Python virtual environment for use by any application to avoid
 #   potential conflicts with Python packages preinstalled in the main Python
 #   installation.
@@ -71,6 +68,12 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && chmod +x "$SUPERCRONIC" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+
+# Setting environment variables required for running rucio-opint-backend
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH=${APP_ROOT}/src:$PYTHONPATH
+ENV DJANGO_SETTINGS_MODULE='rucio_opint_backend.apps.core.settings'
 
 # - In order to drop the root user, we have to make some directories world
 #   writable as OpenShift default security model is to run the container
