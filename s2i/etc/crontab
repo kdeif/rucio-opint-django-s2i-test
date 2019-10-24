@@ -1,1 +1,1 @@
-*/2 * * * * python $APP_ROOT/src/manage.py rucio_loader_cron
+0 * * * * python $APP_ROOT/src/manage.py rucio_loader_cron

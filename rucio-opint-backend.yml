@@ -1,0 +1,250 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+parameters:
+  - name: ADMIN_PASSWORD
+    description: "Django admin password for user admin"
+  - name: DJANGO_ADMIN_PASSWORD
+    description: "Django admin password for user admin"
+  - name: API_KEY
+    description: "api key for influxdb data source that contains rucio logs"
+  - name: DJANGO_ADMIN_EMAIL
+    description: "Email address for Django Admin default user, admin"
+  - name: DB_NAME
+    description: "The MySQL database hosted by DBonDemand"
+    value: rucio_opint
+  - name: DB_PASS
+    description: "The password for the DBonDemand MySQL Database"
+metadata:
+  creationTimestamp: null
+  name: rucio-opint-backend
+objects:
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: rucio-opint-backend
+    name: rucio-opint-backend
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: rucio-opint-backend:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      git:
+        uri: http://github.com/operationalintelligence/rucio-opint-backend
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: openshift-builder-rucio-opint-django:latest
+      type: Source
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: ygv8AjqEambAuF_lBomt
+      type: GitHub
+    - generic:
+        secret: M75fz3knbWNEygcTREKV
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 2
+    labels:
+      app: rucio-opint-backend
+    name: rucio-opint-backend
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      app: rucio-opint-backend
+      deploymentconfig: rucio-opint-backend
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: rucio-opint-backend
+          deploymentconfig: rucio-opint-backend
+      spec:
+        containers:
+        - env:
+          - name: ADMIN_PASSWORD
+            value: "${ADMIN_PASSWORD}"
+          - name: API_KEY
+            value: "${API_KEY}"
+          - name: DB_NAME
+            value: "${DB_NAME}"
+          - name: DB_PASS
+            value: "${DB_PASS}"
+          - name: DJANGO_ADMIN_EMAIL
+            value: "${DJANGO_ADMIN_EMAIL}"
+          - name: DJANGO_ADMIN_PASSWORD
+            value: "${DJANGO_AMDIN_PASSWORD}"
+          - name: DJANGO_SETTINGS_MODULE
+            value: rucio_opint_backendsettings
+          - name: MODE
+            value: prod
+          image: docker-registry.default.svc:5000/rucio-opint-api/rucio-opint-backend@sha256:fb87b5c642a6491a38071f2b119b704d39458e506d5d5189607cb9fa7c402ec8
+          imagePullPolicy: Always
+          name: rucio-opint-backend
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - rucio-opint-backend
+        from:
+          kind: ImageStreamTag
+          name: rucio-opint-backend:latest
+          namespace: rucio-opint-api
+        lastTriggeredImage: docker-registry.default.svc:5000/rucio-opint-api/rucio-opint-backend@sha256:fb87b5c642a6491a38071f2b119b704d39458e506d5d5189607cb9fa7c402ec8
+      type: ImageChange
+  status:
+    availableReplicas: 0
+    latestVersion: 0
+    observedGeneration: 0
+    replicas: 0
+    unavailableReplicas: 0
+    updatedReplicas: 0
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: rucio-opint-backend
+    name: rucio-opint-backend
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: rucio-opint-backend
+      deploymentconfig: rucio-opint-backend
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: rucio-opint-backend
+    name: rucio-opint-backend
+  spec:
+    host: rucio-opint-api.web.cern.ch
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: rucio-opint-backend
+      weight: 100
+    wildcardPolicy: None
+  status:
+    ingress:
+    - conditions:
+      - lastTransitionTime: 2019-10-24T12:42:04Z
+        status: "True"
+        type: Admitted
+      host: rucio-opint-api.web.cern.ch
+      routerCanonicalHostname: oonodelb.cern.ch
+      routerName: router
+      wildcardPolicy: None
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+      openshift.io/image.dockerRepositoryCheck: 2019-10-24T12:41:50Z
+    creationTimestamp: null
+    generation: 2
+    labels:
+      app: rucio-opint-backend
+    name: openshift-builder-rucio-opint-django
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/imported-from: operationalintelligence/openshift-builder-rucio-opint-django
+      from:
+        kind: DockerImage
+        name: docker-registry.default.svc:5000/rucio-opint-api/openshift-builder-rucio-opint-django:latest
+      generation: 2
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: Source
+  status:
+    dockerImageRepository: ""
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: rucio-opint-backend
+    name: rucio-opint-backend
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: docker-registry.default.svc:5000/rucio-opint-api/rucio-opint-backend:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: ""
+  status:
+    dockerImageRepository: ""
+
