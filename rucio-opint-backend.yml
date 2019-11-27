@@ -14,6 +14,10 @@ parameters:
     value: rucio_opint
   - name: DB_PASS
     description: "The password for the DBonDemand MySQL Database"
+  - name: KRB_PASS
+    description: "The password for the kerberos user account"
+  - name: KRB_USER
+    description: "The username for kerberos authentication. The user must be authorized to access the analytix spark cluster at CERN."
 metadata:
   creationTimestamp: null
   name: rucio-opint-backend
@@ -50,10 +54,10 @@ objects:
     successfulBuildsHistoryLimit: 5
     triggers:
     - github:
-        secret: ygv8AjqEambAuF_lBomt
+        secret: WfZDFNtvll9Y1j0OqiU8
       type: GitHub
     - generic:
-        secret: M75fz3knbWNEygcTREKV
+        secret: GJ1H6VVnjEd_FjV5oMEk
       type: Generic
     - type: ConfigChange
     - imageChange: {}
@@ -66,7 +70,7 @@ objects:
     annotations:
       openshift.io/generated-by: OpenShiftNewApp
     creationTimestamp: null
-    generation: 2
+    generation: 3
     labels:
       app: rucio-opint-backend
     name: rucio-opint-backend
@@ -110,10 +114,14 @@ objects:
           - name: DJANGO_ADMIN_PASSWORD
             value: "${DJANGO_AMDIN_PASSWORD}"
           - name: DJANGO_SETTINGS_MODULE
-            value: rucio_opint_backendsettings
+            value: rucio_opint_backend.apps.core.settings
+          - name: KRB_PASS
+            value: "${123CernPaparrigo}"
+          - name: KRB_USER
+            value: "${KRB_USER}"
           - name: MODE
             value: prod
-          image: docker-registry.default.svc:5000/rucio-opint-api/rucio-opint-backend@sha256:fb87b5c642a6491a38071f2b119b704d39458e506d5d5189607cb9fa7c402ec8
+          image: docker-registry.default.svc:5000/rucio-opint-api/rucio-opint-backend@sha256:c8b24f7da2e642bb19ced4b33bcd328949a9d10c68667a4e9438b3c321d53434
           imagePullPolicy: Always
           name: rucio-opint-backend
           ports:
@@ -138,7 +146,7 @@ objects:
           kind: ImageStreamTag
           name: rucio-opint-backend:latest
           namespace: rucio-opint-api
-        lastTriggeredImage: docker-registry.default.svc:5000/rucio-opint-api/rucio-opint-backend@sha256:fb87b5c642a6491a38071f2b119b704d39458e506d5d5189607cb9fa7c402ec8
+        lastTriggeredImage: docker-registry.default.svc:5000/rucio-opint-api/rucio-opint-backend@sha256:c8b24f7da2e642bb19ced4b33bcd328949a9d10c68667a4e9438b3c321d53434
       type: ImageChange
   status:
     availableReplicas: 0
@@ -188,7 +196,7 @@ objects:
   status:
     ingress:
     - conditions:
-      - lastTransitionTime: 2019-10-24T12:42:04Z
+      - lastTransitionTime: 2019-11-27T14:41:35Z
         status: "True"
         type: Admitted
       host: rucio-opint-api.web.cern.ch
@@ -200,7 +208,7 @@ objects:
   metadata:
     annotations:
       openshift.io/generated-by: OpenShiftNewApp
-      openshift.io/image.dockerRepositoryCheck: 2019-10-24T12:41:50Z
+      openshift.io/image.dockerRepositoryCheck: 2019-11-27T14:41:25Z
     creationTimestamp: null
     generation: 2
     labels:
@@ -247,4 +255,3 @@ objects:
         type: ""
   status:
     dockerImageRepository: ""
-
