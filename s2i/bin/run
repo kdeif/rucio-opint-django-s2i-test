@@ -4,6 +4,9 @@ source /opt/app-root/etc/generate_container_user
 #start supercronic
 supercronic $APP_ROOT/etc/crontab > $APP_ROOT/etc/supercronic.out 2>&1 &
 
+# initialize kerberos
+echo "${KRB_PASS}" | kinit "${KRB_USER}@CERN.CH"
+
 set -e
 
 function is_gunicorn_installed() {

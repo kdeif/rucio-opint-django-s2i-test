@@ -1,1 +1,2 @@
 ##0 * * * * python $APP_ROOT/src/manage.py rucio_loader_cron
+0 */3 * * * source hadoop-setconf.sh analytix && python $APP_ROOT/src/manage.py hdfs_loader_cron

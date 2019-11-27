@@ -10,7 +10,6 @@ ENV PYTHON_VERSION=3.6 \
     LANG=en_US.UTF-8 \
     PIP_NO_CACHE_DIR=off
 
-
 ENV SUMMARY="Platform for building and running Python $PYTHON_VERSION applications" \
     DESCRIPTION="Python $PYTHON_VERSION available as container is a base platform for \
 building and running various Python $PYTHON_VERSION applications and frameworks. \
@@ -50,6 +49,10 @@ COPY ./s2i/etc/ ${APP_ROOT}/etc/
 
 # Copy repo data for hadoop packages
 COPY ./repo_data/Cern-Hadoop-Components.repo /etc/yum.repos.d/
+RUN yum install -y epel-release
+
+# Copy kerberos conf
+COPY ./conf/krb5.conf /etc/
 
 # - Create a Python virtual environment for use by any application to avoid
 #   potential conflicts with Python packages preinstalled in the main Python
@@ -62,11 +65,17 @@ RUN source scl_source enable rh-python36 && \
     rpm-file-permissions
 
 # Install hadoop and hadoop config
-RUN yum install -y  cern-hadoop-config \
-                    cern-hadoop-client \
-                    cern-hadoop-xrootd-connector \
-                    hadoop-bin \
-                    spark-bin
+RUN yum install -y cern-hadoop-config \
+    cern-hadoop-client \
+    cern-hadoop-xrootd-connector \
+    hadoop-bin \ 
+    spark-bin
+
+# Install kerberos
+RUN yum install -y krb5-libs \
+     krb5-devel \
+     krb5-workstation \
+     pam_krb5
 
 # Using Supercronic for cron jobs    
 ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.9/supercronic-linux-amd64 \
@@ -79,13 +88,15 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
-RUN yum install -y 
-
 # Setting environment variables required for running rucio-opint-backend
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH=${APP_ROOT}/src:$PYTHONPATH
 ENV DJANGO_SETTINGS_MODULE='rucio_opint_backend.apps.core.settings'
+
+#Set JAVA_HOME
+RUN echo export JAVA_HOME=$(readlink -f $(which java)) > /etc/profile.d/javaenv.sh
+RUN chmod 0755 /etc/profile.d/javaenv.sh
 
 # - In order to drop the root user, we have to make some directories world
 #   writable as OpenShift default security model is to run the container
