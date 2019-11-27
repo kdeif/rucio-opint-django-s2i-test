@@ -48,6 +48,9 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 # Copy crontab
 COPY ./s2i/etc/ ${APP_ROOT}/etc/
 
+# Copy repo data for hadoop packages
+COPY ./repo_data/Cern-Hadoop-Components.repo /etc/yum.repos.d/
+
 # - Create a Python virtual environment for use by any application to avoid
 #   potential conflicts with Python packages preinstalled in the main Python
 #   installation.
@@ -57,6 +60,13 @@ RUN source scl_source enable rh-python36 && \
     chown -R 1001:0 /usr/sbin/crond && \
     fix-permissions ${APP_ROOT} -P && \
     rpm-file-permissions
+
+# Install hadoop and hadoop config
+RUN yum install -y  cern-hadoop-config \
+                    cern-hadoop-client \
+                    cern-hadoop-xrootd-connector \
+                    hadoop-bin \
+                    spark-bin
 
 # Using Supercronic for cron jobs    
 ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.9/supercronic-linux-amd64 \
@@ -68,6 +78,8 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && chmod +x "$SUPERCRONIC" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+
+RUN yum install -y 
 
 # Setting environment variables required for running rucio-opint-backend
 ENV PYTHONDONTWRITEBYTECODE 1
